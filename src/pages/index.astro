@@ -1,0 +1,131 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+const SURVEY_URL = 'mailto:chris@motivation.digital';
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Motivation Digital",
+  "url": "https://motivation.digital/",
+  "description": "We design and build digital platforms."
+};
+---
+<BaseLayout
+  title="Motivation Digital — We design and build digital platforms."
+  description="We design and build digital platforms. Automated where it should be. Human where it matters."
+  canonical="https://motivation.digital/"
+  schema={schema}
+>
+  <Header />
+
+  <div class="max-wrap">
+    <div class="hero">
+      <p class="eyebrow">Digital Platform Engineering</p>
+      <h1>We design and build digital platforms.</h1>
+      <p class="hero-sub">Automated where it should be. Human where it matters.</p>
+      <div class="pills">
+        <span class="pill">Websites &amp; Portals</span>
+        <span class="pill">AI Agents &amp; Automation</span>
+        <span class="pill">Integrations &amp; Data</span>
+      </div>
+      <a href="#contact" class="btn-cta">Start your project &rarr;</a>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="max-wrap">
+    <div class="section">
+      <p class="lbl">What we do</p>
+      <div class="services">
+        <div class="service">
+          <div class="svc-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1.5" y="3.5" width="17" height="12" rx="2"/><line x1="1.5" y1="7" x2="18.5" y2="7"/>
+              <circle cx="4.5" cy="5.25" r="0.9" fill="currentColor" stroke="none"/>
+              <circle cx="7.5" cy="5.25" r="0.9" fill="currentColor" stroke="none"/>
+            </svg>
+          </div>
+          <h3>Websites &amp; Portals</h3>
+          <p>Custom web design, member portals, public pages, and learning environments built on modern infrastructure.</p>
+        </div>
+        <div class="service">
+          <div class="svc-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.5L12 7.5L18 10L12 12.5L10 18.5L8 12.5L2 10L8 7.5Z"/></svg>
+          </div>
+          <h3>AI Agents &amp; Automation</h3>
+          <p>Cloudflare Workers AI, agent workflows, DevOps pipelines, and automations that remove repetitive work.</p>
+        </div>
+        <div class="service">
+          <div class="svc-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="4" cy="10" r="2.25"/><circle cx="16" cy="5" r="2.25"/><circle cx="16" cy="15" r="2.25"/>
+              <line x1="6.2" y1="9.1" x2="13.8" y2="6"/><line x1="6.2" y1="10.9" x2="13.8" y2="14"/>
+            </svg>
+          </div>
+          <h3>Integrations &amp; Data</h3>
+          <p>Stripe, Typeform, data pipelines, migrations, and platform connectors that make your stack work together.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="max-wrap">
+    <div class="section">
+      <p class="lbl">Our products</p>
+      <h2 class="title">Built on the same stack<br>we build for you.</h2>
+      <p class="sub">We don&#8217;t just build for clients. We run production platforms of our own.</p>
+      <div class="products">
+        <a href="https://dreambody.club" target="_blank" rel="noopener" class="product">
+          <p class="prod-name">DreamBodyClub</p>
+          <p class="prod-url">dreambody.club</p>
+          <p class="prod-desc">AI-powered health &amp; fitness platform. Personalised nutrition, AI coaching, and member management built on Cloudflare Workers AI.</p>
+        </a>
+        <a href="https://studio.video" target="_blank" rel="noopener" class="product">
+          <p class="prod-name">studio.video</p>
+          <p class="prod-url">studio.video</p>
+          <p class="prod-desc">Live video platform built on Cloudflare RealtimeKit. Real-time meetings, broadcasting, and interactive sessions at scale.</p>
+        </a>
+        <a href="https://trustcenter.pro" target="_blank" rel="noopener" class="product">
+          <p class="prod-name">trustcenter.pro</p>
+          <p class="prod-url">trustcenter.pro</p>
+          <p class="prod-desc">Multi-tenant compliance and legal SaaS. Privacy policies, cookie consent, and trust documentation for digital businesses.</p>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="max-wrap">
+    <div class="section">
+      <p class="lbl">Built with</p>
+      <div class="tech-row">
+        <div class="tech">Cloudflare</div>
+        <div class="tech">Anthropic</div>
+        <div class="tech">Stripe</div>
+        <div class="tech">Google</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="max-wrap" id="contact">
+    <div class="section">
+      <div class="cta-box">
+        <p class="lbl">Work with us</p>
+        <h2 class="title">Ready to build something serious?</h2>
+        <p class="sub">Tell us about your project. We&#8217;ll tell you if we&#8217;re the right fit.</p>
+        <a href={SURVEY_URL} class="btn-cta">Start your project &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <Footer />
+</BaseLayout>

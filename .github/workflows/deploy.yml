@@ -1,0 +1,110 @@
+name: Deploy — mdl-site (motivation.digital apex + /work*)
+
+# LCE-10000383: Deploys the Astro 6 app as the CF worker `mdl-site`, serving
+# motivation.digital/ (apex) and motivation.digital/work* (case studies).
+# The superseded `motivation-site` worker is retained as a fallback until
+# Christopher confirms the cutover is complete and verified live.
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CF_ACCOUNT_ID: 681f0c5e92719198aa9688776079097e
+      ZONE_ID: 3b2d8e1f9c8904d9310b253edd20047c
+      WORKER_NAME: mdl-site
+      # Route IDs (motivation.digital — verified 2026-06-06 LCE-10000383)
+      APEX_ROUTE_ID: b37563fab4bf4530883bccb65761eab5
+      WORK_ROUTE_ID: 8ab12d74032b43b2b455a46bb8e58a2d
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Astro (production)
+        run: npm run build
+
+      - name: Generate worker bundle (esbuild)
+        run: node scripts/build-worker.js
+
+      - name: Deploy worker mdl-site to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          # No D1 bindings — motivation.digital is a purely static site
+          HTTP=$(curl -s -o body.txt -w "%{http_code}" \
+            -X PUT "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/${WORKER_NAME}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -F "worker.js=@dist-worker/worker.js;type=application/javascript+module" \
+            -F 'metadata={"main_module":"worker.js","compatibility_date":"2026-06-06","bindings":[],"keep_bindings":["secrets_store_secret"]}')
+          cat body.txt; echo ""
+          if [ "$HTTP" != "200" ]; then echo "Deploy failed: HTTP $HTTP" && exit 1; fi
+          echo "Worker mdl-site deployed: HTTP $HTTP"
+
+      - name: Point motivation.digital/ (apex) at mdl-site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          HTTP=$(curl -s -o route_apex.txt -w "%{http_code}" \
+            -X PUT "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/workers/routes/${APEX_ROUTE_ID}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"pattern\":\"motivation.digital/\",\"script\":\"${WORKER_NAME}\"}")
+          cat route_apex.txt; echo ""
+          if [ "$HTTP" != "200" ]; then echo "Apex route update failed: HTTP $HTTP" && exit 1; fi
+          echo "Apex route → mdl-site: HTTP $HTTP"
+
+      - name: Point motivation.digital/work* at mdl-site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          HTTP=$(curl -s -o route_work.txt -w "%{http_code}" \
+            -X PUT "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/workers/routes/${WORK_ROUTE_ID}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"pattern\":\"motivation.digital/work*\",\"script\":\"${WORKER_NAME}\"}")
+          cat route_work.txt; echo ""
+          if [ "$HTTP" != "200" ]; then echo "Work route update failed: HTTP $HTTP" && exit 1; fi
+          echo "Work route → mdl-site: HTTP $HTTP"
+
+      - name: Smoke test — home + portfolio
+        run: |
+          echo "Waiting 15s for propagation..."
+          sleep 15
+          fail=0
+          check() {
+            local url="$1" desc="$2"
+            for i in 1 2 3; do
+              HTTP=$(curl -s -o /tmp/st.txt -w "%{http_code}" "$url")
+              if [ "$HTTP" = "200" ]; then echo "OK  $desc ($url): 200"; return 0; fi
+              sleep 5
+            done
+            echo "FAIL $desc ($url): HTTP $HTTP"; return 1
+          }
+          check "https://motivation.digital/"      "home"         || fail=1
+          check "https://motivation.digital/work"  "portfolio"    || fail=1
+          # Home must mention Motivation Digital
+          if curl -s https://motivation.digital/ | grep -q 'Motivation Digital'; then
+            echo "OK  home contains brand name"
+          else
+            echo "FAIL home missing brand name"; fail=1
+          fi
+          # Portfolio must contain case study links
+          if curl -s https://motivation.digital/work | grep -q 'fitness-platform-physiotherapy'; then
+            echo "OK  portfolio contains case study links"
+          else
+            echo "FAIL portfolio missing case study links"; fail=1
+          fi
+          if [ "$fail" != "0" ]; then echo "Smoke test failed"; exit 1; fi
+          echo "Smoke test passed (home + portfolio)"

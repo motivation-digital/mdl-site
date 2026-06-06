@@ -1,0 +1,18 @@
+---
+interface Props {
+  active?: string;
+}
+const { active } = Astro.props;
+---
+<header class="header">
+  <div class="header-inner">
+    <a href="/" class="logo">
+      <img src="https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A/motivation-digital-amber-logo/public" alt="Motivation Digital" width="140" height="28">
+    </a>
+    <nav>
+      <a href="/work" class={active === 'work' ? 'active' : ''}>Work</a>
+      <a href="https://studio.video" target="_blank" rel="noopener">Studio</a>
+      <a href="https://trustcenter.pro" target="_blank" rel="noopener">Products</a>
+    </nav>
+  </div>
+</header>

@@ -1,0 +1,20 @@
+{
+  "name": "mdl-site",
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "build:worker": "node scripts/build-worker.js"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.6.1",
+    "astro": "^6.4.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2"
+  }
+}

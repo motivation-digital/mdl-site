@@ -1,0 +1,43 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  canonical?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  schema?: object;
+}
+
+const {
+  title,
+  description = "We design and build digital platforms. Automated where it should be. Human where it matters.",
+  canonical,
+  ogTitle,
+  ogDescription,
+  ogImage,
+  schema,
+} = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/png" href="https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A/ms-favicon/public">
+<title>{title}</title>
+<meta name="description" content={description}>
+{canonical && <link rel="canonical" href={canonical}>}
+<meta property="og:title" content={ogTitle || title}>
+<meta property="og:description" content={ogDescription || description}>
+{ogImage && <meta property="og:image" content={ogImage}>}
+<meta property="og:type" content="website">
+<meta property="og:url" content={canonical || "https://motivation.digital"}>
+{schema && <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />}
+</head>
+<body>
+<slot />
+</body>
+</html>

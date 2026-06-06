@@ -1,0 +1,111 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import { PORTFOLIO } from "../../lib/portfolio.js";
+
+// BeMobile logos for marquee
+const LOGOS = [
+  { src: 'https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A/ms-tech-kajabi/public', alt: 'Kajabi' },
+  { src: 'https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A/ms-tech-launchpad/public', alt: 'Launchpad' },
+  { src: 'https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A/ms-tech-stripe/public', alt: 'Stripe' },
+  { src: 'https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A/ms-tech-gtm/public', alt: 'Google Tag Manager' },
+  { src: 'https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A/ms-tech-ga/public', alt: 'Google Analytics' },
+  { src: 'https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A/ms-client-trr/public', alt: 'Time Rich Recruiter' },
+  { src: 'https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A/ms-client-gkr/public', alt: 'GKR Karate' },
+  { src: 'https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A/ms-client-lifemap/public', alt: 'LifeMap' },
+];
+const marqueeLogos = [...LOGOS, ...LOGOS];
+---
+<BaseLayout
+  title="Work — Motivation Digital"
+  description="Digital platforms built by Motivation Digital for health, education, and B2B brands."
+  canonical="https://motivation.digital/work"
+>
+  <Header active="work" />
+
+  <div class="max-wrap">
+    <div class="port-header">
+      <p class="lbl reveal">Portfolio</p>
+      <h1 class="title reveal">The platforms we&#8217;ve built.</h1>
+      <p class="sub reveal" style="margin-bottom:0">Digital infrastructure for health, education, and B2B brands.</p>
+      <div class="filter-row">
+        <button class="filt on" data-filter="all">All</button>
+        <button class="filt" data-filter="b2b">B2B</button>
+        <button class="filt" data-filter="health-fitness">Health &amp; Fitness</button>
+        <button class="filt" data-filter="education">Education</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="port-grid" id="grid">
+    {PORTFOLIO.map((p, idx) => {
+      const inner = (
+        <>
+          <div class="p-img">
+            {p.img
+              ? <img src={p.img} alt={p.cardTitle || p.name} loading="lazy" />
+              : <span>{p.i}</span>
+            }
+          </div>
+          <div class="p-body">
+            <p class="p-cat">{p.client || p.label}</p>
+            <h3>{p.cardTitle || p.name}</h3>
+            <p>{p.cardDesc || p.result}</p>
+            {p.slug && <span class="p-more">View case study &rarr;</span>}
+          </div>
+        </>
+      );
+      return p.slug
+        ? <a class="p-card reveal" style={`transition-delay:${idx * 0.08}s`} href={`/work/${p.slug}`} data-cat={p.cat}>{inner}</a>
+        : <div class="p-card reveal" style={`transition-delay:${idx * 0.08}s`} data-cat={p.cat}>{inner}</div>;
+    })}
+  </div>
+
+  <div class="marquee" style="padding:2.5rem 0; margin-top:1rem">
+    <div class="marquee-track">
+      {marqueeLogos.map(l => <img src={l.src} alt={l.alt} loading="lazy" />)}
+    </div>
+  </div>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+(function(){
+  const btns = document.querySelectorAll('.filt');
+  const cards = document.querySelectorAll('.p-card');
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){
+      btns.forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      const f = (b as HTMLElement).dataset.filter;
+      cards.forEach(function(c){
+        (c as HTMLElement).classList.toggle('hide', f !== 'all' && (c as HTMLElement).dataset.cat !== f);
+      });
+    });
+  });
+}());
+(function(){
+  const track = document.querySelector('.marquee-track') as HTMLElement;
+  if (!track) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let pos = 0, paused = false, lastTs: number | null = null;
+  function step(ts: number) {
+    if (!paused) {
+      if (lastTs !== null) {
+        pos -= 50 * (ts - lastTs) / 1000;
+        const half = track.scrollWidth / 2;
+        if (pos <= -half) pos += half;
+        track.style.transform = 'translateX(' + pos + 'px)';
+      }
+      lastTs = ts;
+    }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  const wrap = track.parentElement!;
+  wrap.addEventListener('mouseenter', function() { paused = true; lastTs = null; });
+  wrap.addEventListener('mouseleave', function() { paused = false; });
+}());
+</script>
