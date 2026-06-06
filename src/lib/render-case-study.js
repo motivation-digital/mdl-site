@@ -2,6 +2,9 @@
 // Migrated from motivation-site/src/worker.js
 // Shared by both Astro [slug].astro pages and the worker-runtime.js
 
+const SURVEY_URL = 'mailto:chris@motivation.digital'; // TODO: replace with Typeform URL
+const CF_IMG = 'https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A';
+
 function css() {
   return `
     @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&display=swap');
