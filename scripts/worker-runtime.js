@@ -4,17 +4,18 @@
 // Serves:
 //   - /           — Homepage (static, from ASSETS)
 //   - /work       — Portfolio page (static, from ASSETS)
-//   - /work/:slug — Case study pages (static, from ASSETS)
+//   - /work/:slug — Case study pages (rendered at runtime from PROJECTS + caseStudy())
 //   - All other static assets (CSS, JS, images) from ASSETS
 //   - Unknown slugs → 301 to /work
 //
-// Architecture: The Astro build outputs static HTML to dist/client/. The build-worker.js
-// script bundles all of these into an ASSETS map. At runtime this worker serves them
-// directly from the map — no D1 bindings needed (motivation-site has no D1).
+// Case study pages are rendered at runtime (not pre-built) because they embed
+// a full <!DOCTYPE html> document from caseStudy() and bypass Astro's wrapper.
+// This follows the same pattern as dbc-site for article pages.
 
 import { ASSETS } from '../dist-worker/assets.js';
+import { PROJECTS, caseStudy } from '../src/lib/render-case-study.js';
 
-function html(body, status = 200) {
+function htmlResp(body, status = 200) {
   return new Response(body, {
     status,
     headers: {
@@ -56,9 +57,20 @@ export default {
     const url = new URL(request.url);
     let path = url.pathname;
 
-    // Normalise trailing slash
+    // Normalise trailing slash (except root)
     if (path !== '/' && path.endsWith('/')) {
       return Response.redirect(url.origin + path.slice(0, -1), 301);
+    }
+
+    // Case study pages — served directly from caseStudy() renderer
+    if (path.startsWith('/work/') && path !== '/work/') {
+      const slug = path.slice('/work/'.length).replace(/\/$/, '');
+      const project = PROJECTS[slug];
+      if (project) {
+        return htmlResp(caseStudy(project, slug));
+      }
+      // Unknown slug → redirect to /work
+      return Response.redirect(url.origin + '/work', 301);
     }
 
     // Try exact asset match first (CSS, JS, images, etc.)
@@ -67,20 +79,15 @@ export default {
 
     // HTML pages — Astro outputs as /path/index.html
     const htmlPath = path === '/' ? '/index.html' : `${path}/index.html`;
-    const htmlResp = serveAsset(htmlPath);
-    if (htmlResp) return htmlResp;
+    const htmlResp2 = serveAsset(htmlPath);
+    if (htmlResp2) return htmlResp2;
 
     // Also try /path.html (fallback)
     const htmlPath2 = `${path}.html`;
-    const htmlResp2 = serveAsset(htmlPath2);
-    if (htmlResp2) return htmlResp2;
+    const htmlResp3 = serveAsset(htmlPath2);
+    if (htmlResp3) return htmlResp3;
 
-    // Unknown /work/:slug → redirect to /work
-    if (path.startsWith('/work/')) {
-      return Response.redirect(url.origin + '/work', 301);
-    }
-
-    // 404 fallback — serve homepage (motivation-site behaviour)
+    // 404 fallback — serve homepage
     const fallback = serveAsset('/index.html');
     if (fallback) return fallback;
 
