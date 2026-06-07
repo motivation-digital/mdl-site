@@ -32,6 +32,8 @@ function htmlResp(body, status = 200) {
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'SAMEORIGIN',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
+      'Cross-Origin-Opener-Policy': 'same-origin',
     },
   });
 }
@@ -54,8 +56,12 @@ function serveAsset(path) {
   return new Response(body, {
     headers: {
       'content-type': asset.m,
-      'cache-control': path.endsWith('.html') ? 'public, max-age=60' : 'public, max-age=86400, immutable',
+      // Hashed assets are content-addressed → 1y immutable; HTML stays short (LCE-10000384).
+      'cache-control': path.endsWith('.html') ? 'public, max-age=60' : 'public, max-age=31536000, immutable',
       'X-Content-Type-Options': 'nosniff',
+      'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Cross-Origin-Opener-Policy': 'same-origin',
     },
   });
 }
