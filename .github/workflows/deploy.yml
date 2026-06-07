@@ -105,5 +105,17 @@ jobs:
           else
             echo "FAIL portfolio missing case study links"; fail=1
           fi
+          # CSS must be inlined (no _astro external CSS reference)
+          if curl -s https://motivation.digital/ | grep -q 'family=Roboto'; then
+            echo "OK  home has inlined CSS (Roboto font reference found)"
+          else
+            echo "FAIL home missing inlined CSS"; fail=1
+          fi
+          # Case study check
+          if curl -s https://motivation.digital/work/fitness-platform-physiotherapy | grep -q 'BeMobile\|Be Mobile'; then
+            echo "OK  case study renders"
+          else
+            echo "FAIL case study missing content"; fail=1
+          fi
           if [ "$fail" != "0" ]; then echo "Smoke test failed"; exit 1; fi
-          echo "Smoke test passed (home + portfolio)"
+          echo "Smoke test passed (home + portfolio + CSS + case study)"
