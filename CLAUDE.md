@@ -1,27 +1,35 @@
 # mdl-site
 
 Astro 6 app for motivation.digital. Serves the apex homepage (/) and the portfolio
-(/work) with 11 case study pages (/work/:slug). Migrated from motivation-site
-(single-file 4,093-line CF Worker) to Astro 6 component architecture. LCE-10000383.
+(/work) with 12 case study pages (/work/:slug), plus robots.txt and sitemap.xml.
+Migrated from motivation-site (single-file 4,093-line CF Worker) to Astro 6 component
+architecture. LCE-10000383.
 
-Deploys to: CF Worker `mdl-site` — zone routes `motivation.digital/` (apex) + `motivation.digital/work*`
+Deploys to: CF Worker `mdl-site` — zone routes:
+  - motivation.digital/ (apex)
+  - motivation.digital/work*
+  - motivation.digital/robots.txt
+  - motivation.digital/sitemap*
 Lifecycle repo: https://github.com/motivation-digital/lifecycle
 
 ## ⛔ Must not change
-- `seo-motivation` worker (dashboard-managed, no GitHub repo) — owns `/robots.txt`,
-  `/sitemap*.xml`, `/refresh-sitemaps`, and the `*motivation.digital/*` catch-all 301 to www.
-  Do NOT broaden mdl-site routes to `motivation.digital/*` — it would shadow seo-motivation.
+- `seo-motivation` worker (dashboard-managed, no GitHub repo) — still owns
+  `/refresh-sitemaps` and the `*motivation.digital/*` catch-all 301 to www.
+  robots.txt and sitemap.xml are now served by mdl-site (more specific routes win).
+  Do NOT delete seo-motivation until Christopher confirms it is safe to do so.
 - `trust-center` worker — owns `motivation.digital/trust-center*`. Do not touch.
 - `www.motivation.digital` is a proxied CNAME → ssl.kajabi.com (O2O). Do not modify DNS.
-- Route IDs in deploy.yml — verified live 2026-06-06.
+- Route IDs in deploy.yml — verified live 2026-06-06/07.
 - Deploy = GitHub Actions → direct CF API only. NEVER wrangler (Rule 21).
 - All CF Stream and CF Images URLs must be preserved verbatim — they reference live media.
 
-## Current state (LCE-10000383 — CSS inline fix, 2026-06-07)
-Phase 1 + CSS fix: Full Astro 6 migration from the motivation-site single-file worker.
+## Current state (LCE-10000383 — robots.txt + sitemap added, 2026-06-07)
+Phase 1 + CSS fix + robots/sitemap:
 - Homepage (/): Astro component layout, amber + dark design. Static pre-render.
 - Portfolio (/work): 12 project cards, filterable by category. Static pre-render.
 - Case studies (/work/:slug): Served at runtime from worker-runtime.js via caseStudy().
+- robots.txt (/robots.txt): Served inline from worker-runtime.js. Route: motivation.digital/robots.txt
+- sitemap.xml (/sitemap.xml): Built dynamically at runtime from worker-runtime.js. Route: motivation.digital/sitemap*
 - All images: CF Images (imagedelivery.net/8taA81TQ4UD-fca9BHMP5A).
 - All videos: CF Stream (iframe.videodelivery.net / customer-4x18g7wq6et2wysi.cloudflarestream.com).
 - No D1 bindings — purely static.
@@ -31,17 +39,17 @@ Phase 1 + CSS fix: Full Astro 6 migration from the motivation-site single-file w
   caught by the seo-motivation catch-all (301 redirect to www), causing unstyled pages.
 
 ## Repo structure
-- src/pages/index.astro       — Homepage
-- src/pages/work/index.astro  — Portfolio grid
-- src/pages/work/[slug].astro — Case study detail (static, getStaticPaths)
-- src/lib/portfolio.js        — PORTFOLIO array + SLUGS export
+- src/pages/index.astro        — Homepage
+- src/pages/work/index.astro   — Portfolio grid
+- src/pages/work/[slug].astro  — Case study detail (static, getStaticPaths)
+- src/lib/portfolio.js         — PORTFOLIO array + SLUGS export
 - src/lib/render-case-study.js — Full render function (PROJECTS + caseStudy)
 - src/layouts/BaseLayout.astro — HTML head + CSS import
 - src/components/Header.astro  — Site header
 - src/components/Footer.astro  — Site footer
 - src/styles/global.css        — Global CSS (verbatim from motivation-site)
 - scripts/build-worker.js      — Bundles Astro output into dist-worker/worker.js
-- scripts/worker-runtime.js    — Worker that serves static assets from ASSETS map
+- scripts/worker-runtime.js    — Worker that serves static assets, robots.txt, sitemap.xml
 - .github/workflows/deploy.yml — CF API deploy workflow
 
 ## Endpoints
@@ -49,7 +57,9 @@ Phase 1 + CSS fix: Full Astro 6 migration from the motivation-site single-file w
 | --- | --- | --- | --- |
 | GET | / | Homepage | none |
 | GET | /work | Portfolio grid (12 projects, filterable) | none |
-| GET | /work/:slug | Case study (11 slugs pre-rendered) | none |
+| GET | /work/:slug | Case study (12 slugs, runtime-rendered) | none |
+| GET | /robots.txt | Robots.txt (inline, worker-runtime.js) | none |
+| GET | /sitemap.xml | XML sitemap (dynamic, worker-runtime.js) | none |
 
 ## Case study slugs
 - fitness-platform-physiotherapy (BeMobile)

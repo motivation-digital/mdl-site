@@ -2,11 +2,19 @@
 // LCE-10000383. Bundled by scripts/build-worker.js with esbuild into dist-worker/worker.js.
 //
 // Serves:
-//   - /           — Homepage (static, from ASSETS)
-//   - /work       — Portfolio page (static, from ASSETS)
-//   - /work/:slug — Case study pages (rendered at runtime from PROJECTS + caseStudy())
+//   - /              — Homepage (static, from ASSETS)
+//   - /work          — Portfolio page (static, from ASSETS)
+//   - /work/:slug    — Case study pages (rendered at runtime from PROJECTS + caseStudy())
+//   - /robots.txt    — Robots.txt for motivation.digital (route: motivation.digital/robots.txt)
+//   - /sitemap.xml   — XML sitemap for motivation.digital (route: motivation.digital/sitemap*)
 //   - All other static assets (CSS, JS, images) from ASSETS
 //   - Unknown slugs → 301 to /work
+//
+// Robots.txt and sitemap routes (LCE-10000383, 2026-06-07):
+//   motivation.digital/robots.txt  → mdl-site (route ID: af0e4bffb14f4340b329615486ae77b8)
+//   motivation.digital/sitemap*    → mdl-site (route ID: c0c6b0d387784627a96a66645a4a0938)
+//   These routes override the seo-motivation catch-all for these specific paths,
+//   allowing seo-motivation to be deactivated once Christopher confirms the cutover.
 //
 // Case study pages are rendered at runtime (not pre-built) because they embed
 // a full <!DOCTYPE html> document from caseStudy() and bypass Astro's wrapper.
@@ -52,6 +60,50 @@ function serveAsset(path) {
   });
 }
 
+// robots.txt for motivation.digital
+// Allows all crawlers on the mdl-site-served paths.
+// Disallows the www subdomain which still points to Kajabi.
+const ROBOTS_TXT = `User-agent: *
+Allow: /
+Allow: /work
+Allow: /work/
+
+Sitemap: https://motivation.digital/sitemap.xml
+`;
+
+// XML sitemap for motivation.digital
+// Lists the homepage, portfolio, and all 12 case study pages.
+const CASE_STUDY_SLUGS = [
+  'fitness-platform-physiotherapy',
+  'healthcare-platform-dietitians',
+  'music-platform-guitar',
+  'b2b-insurance-training-platform',
+  'healthtech-platform-qina',
+  'recruitment-coaching-platform',
+  'health-platform-dreambody',
+  'music-collaboration-platform',
+  'martial-arts-platform',
+  'speech-education-platform',
+  'compliance-privacy-platform',
+  'video-meeting-platform',
+];
+
+function buildSitemap() {
+  const BASE = 'https://motivation.digital';
+  const now = new Date().toISOString().split('T')[0];
+  const urls = [
+    `  <url><loc>${BASE}/</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
+    `  <url><loc>${BASE}/work</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>`,
+    ...CASE_STUDY_SLUGS.map(slug =>
+      `  <url><loc>${BASE}/work/${slug}</loc><lastmod>${now}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>`
+    ),
+  ];
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join('\n')}
+</urlset>`;
+}
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
@@ -60,6 +112,26 @@ export default {
     // Normalise trailing slash (except root)
     if (path !== '/' && path.endsWith('/')) {
       return Response.redirect(url.origin + path.slice(0, -1), 301);
+    }
+
+    // robots.txt — served directly (route: motivation.digital/robots.txt)
+    if (path === '/robots.txt') {
+      return new Response(ROBOTS_TXT, {
+        headers: {
+          'content-type': 'text/plain;charset=UTF-8',
+          'cache-control': 'public, max-age=3600',
+        },
+      });
+    }
+
+    // sitemap.xml — served directly (route: motivation.digital/sitemap*)
+    if (path === '/sitemap.xml' || path === '/sitemap') {
+      return new Response(buildSitemap(), {
+        headers: {
+          'content-type': 'application/xml;charset=UTF-8',
+          'cache-control': 'public, max-age=3600',
+        },
+      });
     }
 
     // Case study pages — served directly from caseStudy() renderer
