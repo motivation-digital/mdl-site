@@ -1,5 +1,11 @@
 ---
-import "../styles/global.css";
+// LCE-10000383: Import CSS as raw string to inline it directly in HTML.
+// Previously used `import "../styles/global.css"` which caused Astro to emit a
+// hashed CSS file (e.g. /_astro/Footer.FEGWKdnq.css). That file fell outside
+// the mdl-site CF routes (motivation.digital/ and motivation.digital/work*),
+// so the seo-motivation catch-all redirected CSS requests to www.motivation.digital —
+// resulting in unstyled pages. Inlining avoids the routing problem entirely.
+import globalCss from "../styles/global.css?raw";
 
 interface Props {
   title: string;
@@ -36,6 +42,7 @@ const {
 <meta property="og:type" content="website">
 <meta property="og:url" content={canonical || "https://motivation.digital"}>
 {schema && <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />}
+<style is:inline set:html={globalCss}></style>
 </head>
 <body>
 <slot />

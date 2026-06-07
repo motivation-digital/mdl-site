@@ -17,15 +17,18 @@ Lifecycle repo: https://github.com/motivation-digital/lifecycle
 - Deploy = GitHub Actions → direct CF API only. NEVER wrangler (Rule 21).
 - All CF Stream and CF Images URLs must be preserved verbatim — they reference live media.
 
-## Current state (LCE-10000383 — initial migration)
-Phase 1: Full Astro 6 migration from the motivation-site single-file worker.
+## Current state (LCE-10000383 — CSS inline fix, 2026-06-07)
+Phase 1 + CSS fix: Full Astro 6 migration from the motivation-site single-file worker.
 - Homepage (/): Astro component layout, amber + dark design. Static pre-render.
 - Portfolio (/work): 12 project cards, filterable by category. Static pre-render.
-- Case studies (/work/:slug): 11 pages, statically pre-rendered using the shared
-  caseStudy() renderer from src/lib/render-case-study.js.
+- Case studies (/work/:slug): Served at runtime from worker-runtime.js via caseStudy().
 - All images: CF Images (imagedelivery.net/8taA81TQ4UD-fca9BHMP5A).
 - All videos: CF Stream (iframe.videodelivery.net / customer-4x18g7wq6et2wysi.cloudflarestream.com).
 - No D1 bindings — purely static.
+- CSS is INLINED in HTML (not a separate hashed file) — BaseLayout.astro uses
+  `import global.css?raw` + `<style is:inline set:html={...}>`. This avoids the
+  routing problem where /_astro/*.css fell outside the mdl-site CF routes and was
+  caught by the seo-motivation catch-all (301 redirect to www), causing unstyled pages.
 
 ## Repo structure
 - src/pages/index.astro       — Homepage
