@@ -91,6 +91,18 @@ export const PORTFOLIO = [
     cardDesc: 'A free Health Index that scores four areas of wellbeing, then builds a personalised program — with a 589-workout and 316-recipe library that adapts to her life.',
   },
   {
+    i: 'DBC',
+    name: 'DreamBodyClub',
+    cat: 'health-fitness',
+    label: 'Health & Fitness',
+    result: 'Personalised health and wellness platform · women 20-50 · health scoring engine',
+    slug: 'health-platform-dreambody-01',
+    img: 'https://imagedelivery.net/8taA81TQ4UD-fca9BHMP5A/33f2497e-888b-43aa-e9a5-8fd0bb911d00/public',
+    client: 'DreamBodyClub',
+    cardTitle: 'AI Health Coaching Platform for Women',
+    cardDesc: 'A personalised health and wellness platform empowering women with tailored insights, programs, recipes and workouts that fit real life.',
+  },
+  {
     i: 'MX',
     name: 'Mixmasters',
     cat: 'education',
