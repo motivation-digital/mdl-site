@@ -1,0 +1,17 @@
+---
+// Case study pages — prerendered at build time from PROJECTS + caseStudy().
+// LCE-10000426: moved out of worker-runtime.js runtime rendering. The renderer
+// (src/lib/render-case-study.js) stays the single source of truth; this page
+// emits its exact HTML verbatim so visual parity is guaranteed by construction.
+// caseStudy() self-dispatches to the 9-zone alt layout via p.altLayout (LCE-10000337).
+import { PROJECTS, caseStudy } from '../../lib/render-case-study.js';
+
+export function getStaticPaths() {
+  return Object.keys(PROJECTS).map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+// Astro prepends its own <!DOCTYPE html>; strip the renderer's to avoid doubling.
+const html = caseStudy(PROJECTS[slug], slug).replace(/^\s*<!DOCTYPE html>\s*/i, '');
+---
+<Fragment set:html={html} />

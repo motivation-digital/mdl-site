@@ -32,7 +32,7 @@ checkbody "$BASE/" "Motivation Digital" "brand name present"
 checkcode "$BASE/work" "200" "portfolio"
 checkbody "$BASE/work" "fitness-platform-physiotherapy" "case study link present"
 
-# 3. A case study (runtime-rendered from worker-runtime.js)
+# 3. A case study (prerendered at build time — src/pages/work/[slug].astro, LCE-10000426)
 checkcode "$BASE/work/fitness-platform-physiotherapy" "200" "case study page"
 checkbody "$BASE/work/fitness-platform-physiotherapy" "BeMobile" "case study content present"
 

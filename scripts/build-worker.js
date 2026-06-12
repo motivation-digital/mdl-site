@@ -44,6 +44,30 @@ function walk(dir) {
   return entries;
 }
 
+// --- 0. Parity gate (LCE-10000426) ---
+// Case studies are prerendered by src/pages/work/[slug].astro from caseStudy().
+// Verify every built page is byte-identical to the renderer output (modulo the
+// doctype line Astro re-adds) and that none is missing. A mismatch aborts the
+// build, which aborts the deploy — the live worker keeps serving.
+const { PROJECTS, caseStudy } = await import('../src/lib/render-case-study.js');
+const normDoctype = (s) => s.replace(/^\s*<!DOCTYPE html>\s*/i, '');
+for (const slug of Object.keys(PROJECTS)) {
+  const builtPath = join(CLIENT_DIR, 'work', slug, 'index.html');
+  let built;
+  try {
+    built = readFileSync(builtPath, 'utf8');
+  } catch {
+    console.error(`PARITY FAIL: missing built case study ${builtPath}`);
+    process.exit(1);
+  }
+  const expected = caseStudy(PROJECTS[slug], slug);
+  if (normDoctype(built) !== normDoctype(expected)) {
+    console.error(`PARITY FAIL: built /work/${slug} differs from caseStudy() output`);
+    process.exit(1);
+  }
+}
+console.log(`Parity gate passed: ${Object.keys(PROJECTS).length} case studies match caseStudy() byte-for-byte`);
+
 const files = walk(CLIENT_DIR);
 const assets = [];
 

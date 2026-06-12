@@ -1,4 +1,6 @@
 node_modules/
 dist/
+dist-local/
 dist-worker/
 .astro/
+package-lock.json
