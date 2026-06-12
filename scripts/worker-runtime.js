@@ -4,7 +4,8 @@
 // Serves:
 //   - /              — Homepage (static, from ASSETS)
 //   - /work          — Portfolio page (static, from ASSETS)
-//   - /work/:slug    — Case study pages (rendered at runtime from PROJECTS + caseStudy())
+//   - /work/:slug    — Case study pages (static, from ASSETS — prerendered by
+//                      src/pages/work/[slug].astro at build time, LCE-10000426)
 //   - /robots.txt    — Robots.txt for motivation.digital (route: motivation.digital/robots.txt)
 //   - /sitemap.xml   — XML sitemap for motivation.digital (route: motivation.digital/sitemap*)
 //   - All other static assets (CSS, JS, images) from ASSETS
@@ -15,26 +16,8 @@
 //   motivation.digital/sitemap*    → mdl-site (route ID: c0c6b0d387784627a96a66645a4a0938)
 //   These routes override the seo-motivation catch-all for these specific paths,
 //   allowing seo-motivation to be deactivated once Christopher confirms the cutover.
-//
-// Case study pages are rendered at runtime (not pre-built) because they embed
-// a full <!DOCTYPE html> document from caseStudy() and bypass Astro's wrapper.
-// This follows the same pattern as dbc-site for article pages.
 
 import { ASSETS } from '../dist-worker/assets.js';
-import { PROJECTS, caseStudy } from '../src/lib/render-case-study.js';
-
-function htmlResp(body, status = 200) {
-  return new Response(body, {
-    status,
-    headers: {
-      'content-type': 'text/html;charset=UTF-8',
-      'cache-control': 'public, max-age=60',
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'SAMEORIGIN',
-      'Referrer-Policy': 'strict-origin-when-cross-origin',
-    },
-  });
-}
 
 function serveAsset(path) {
   const asset = ASSETS.get(path);
@@ -51,13 +34,18 @@ function serveAsset(path) {
     body = arr.buffer;
   }
 
-  return new Response(body, {
-    headers: {
-      'content-type': asset.m,
-      'cache-control': path.endsWith('.html') ? 'public, max-age=60' : 'public, max-age=86400, immutable',
-      'X-Content-Type-Options': 'nosniff',
-    },
-  });
+  const isHtml = path.endsWith('.html');
+  const headers = {
+    'content-type': asset.m,
+    'cache-control': isHtml ? 'public, max-age=60' : 'public, max-age=86400, immutable',
+    'X-Content-Type-Options': 'nosniff',
+  };
+  if (isHtml) {
+    headers['X-Frame-Options'] = 'SAMEORIGIN';
+    headers['Referrer-Policy'] = 'strict-origin-when-cross-origin';
+  }
+
+  return new Response(body, { headers });
 }
 
 // robots.txt for motivation.digital
@@ -134,22 +122,12 @@ export default {
       });
     }
 
-    // Case study pages — served directly from caseStudy() renderer
-    if (path.startsWith('/work/') && path !== '/work/') {
-      const slug = path.slice('/work/'.length).replace(/\/$/, '');
-      const project = PROJECTS[slug];
-      if (project) {
-        return htmlResp(caseStudy(project, slug));
-      }
-      // Unknown slug → redirect to /work
-      return Response.redirect(url.origin + '/work', 301);
-    }
-
     // Try exact asset match first (CSS, JS, images, etc.)
     const assetResp = serveAsset(path);
     if (assetResp) return assetResp;
 
     // HTML pages — Astro outputs as /path/index.html
+    // (includes the prerendered case studies at /work/<slug>/index.html, LCE-10000426)
     const htmlPath = path === '/' ? '/index.html' : `${path}/index.html`;
     const htmlResp2 = serveAsset(htmlPath);
     if (htmlResp2) return htmlResp2;
@@ -158,6 +136,11 @@ export default {
     const htmlPath2 = `${path}.html`;
     const htmlResp3 = serveAsset(htmlPath2);
     if (htmlResp3) return htmlResp3;
+
+    // Unknown case-study slug → redirect to /work
+    if (path.startsWith('/work/')) {
+      return Response.redirect(url.origin + '/work', 301);
+    }
 
     // 404 fallback — serve homepage
     const fallback = serveAsset('/index.html');

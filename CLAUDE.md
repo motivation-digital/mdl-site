@@ -23,11 +23,17 @@ Lifecycle repo: https://github.com/motivation-digital/lifecycle
 - Deploy = GitHub Actions → direct CF API only. NEVER wrangler (Rule 21).
 - All CF Stream and CF Images URLs must be preserved verbatim — they reference live media.
 
-## Current state (LCE-10000383 — robots.txt + sitemap added, 2026-06-07)
-Phase 1 + CSS fix + robots/sitemap:
+## Current state (LCE-10000426 — case studies prerendered at build time, 2026-06-12)
 - Homepage (/): Astro component layout, amber + dark design. Static pre-render.
 - Portfolio (/work): 12 project cards, filterable by category. Static pre-render.
-- Case studies (/work/:slug): Served at runtime from worker-runtime.js via caseStudy().
+- Case studies (/work/:slug): Prerendered at build time by src/pages/work/[slug].astro
+  (getStaticPaths over PROJECTS; caseStudy() output emitted verbatim via set:html —
+  it self-dispatches to the 9-zone alt layout for health-platform-dreambody-01).
+  Served as static assets by worker-runtime.js like every other page. The renderer
+  src/lib/render-case-study.js remains the single source of truth for content + markup;
+  build-worker.js has a parity gate that fails the build (and so the deploy) if any
+  built page differs from caseStudy() output. 13 entries = 12 public slugs + the -01
+  alt-layout variant (excluded from the sitemap).
 - robots.txt (/robots.txt): Served inline from worker-runtime.js. Route: motivation.digital/robots.txt
 - sitemap.xml (/sitemap.xml): Built dynamically at runtime from worker-runtime.js. Route: motivation.digital/sitemap*
 - All images: CF Images (imagedelivery.net/8taA81TQ4UD-fca9BHMP5A).
@@ -41,9 +47,11 @@ Phase 1 + CSS fix + robots/sitemap:
 ## Repo structure
 - src/pages/index.astro        — Homepage
 - src/pages/work/index.astro   — Portfolio grid
-- src/pages/work/[slug].astro  — Case study detail (static, getStaticPaths)
+- src/pages/work/[slug].astro  — Case study detail (static, getStaticPaths, LCE-10000426)
 - src/lib/portfolio.js         — PORTFOLIO array + SLUGS export
-- src/lib/render-case-study.js — Full render function (PROJECTS + caseStudy)
+- src/lib/render-case-study.js — Full render function (PROJECTS + caseStudy + alt layout)
+- astro.config.local.mjs       — Local-only build config (no CF adapter — workerd crashes
+                                 in the desktop env; CI uses astro.config.mjs)
 - src/layouts/BaseLayout.astro — HTML head + CSS import
 - src/components/Header.astro  — Site header
 - src/components/Footer.astro  — Site footer
@@ -57,7 +65,7 @@ Phase 1 + CSS fix + robots/sitemap:
 | --- | --- | --- | --- |
 | GET | / | Homepage | none |
 | GET | /work | Portfolio grid (12 projects, filterable) | none |
-| GET | /work/:slug | Case study (12 slugs, runtime-rendered) | none |
+| GET | /work/:slug | Case study (12 public slugs + -01 variant, prerendered) | none |
 | GET | /robots.txt | Robots.txt (inline, worker-runtime.js) | none |
 | GET | /sitemap.xml | XML sitemap (dynamic, worker-runtime.js) | none |
 
